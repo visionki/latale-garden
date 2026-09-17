@@ -32,6 +32,7 @@ namespace LaTaleGarden
         private string stage = "ready";
         private string aboutReturnPane = "HomePane";
         private Forms.NotifyIcon tray;
+        private Drawing.Icon trayIcon;
         private System.Threading.EventWaitHandle activationEvent;
         private DateTime sessionStarted;
 
@@ -58,6 +59,7 @@ namespace LaTaleGarden
             }
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MainWindow.xaml")) surface = (UserControl)XamlReader.Load(stream);
             Title = "LaTale Garden · 彩虹岛台服启动器";
+            Icon = LoadImage("app-icon.png");
             WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize; AllowsTransparency = true; Background = Brushes.Transparent;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             double scale = Math.Min(1.0, Math.Min((SystemParameters.WorkArea.Width - 60) / 1080.0, (SystemParameters.WorkArea.Height - 60) / 690.0));
@@ -108,7 +110,7 @@ namespace LaTaleGarden
             UI<CheckBox>("CompatibilityToggle").Unchecked += (s, e) => SaveMode();
             InitializeRegion();
             Closing += OnClosing;
-            Closed += (s, e) => { if (tray != null) { tray.Visible = false; tray.Dispose(); } if (activationEvent != null) activationEvent.Dispose(); };
+            Closed += (s, e) => { if (tray != null) { tray.Visible = false; tray.Dispose(); } if (trayIcon != null) trayIcon.Dispose(); if (activationEvent != null) activationEvent.Dispose(); };
             timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             timer.Tick += (s, e) => PollStatus();
             Loaded += async (s, e) => {
@@ -380,7 +382,9 @@ namespace LaTaleGarden
         {
             if (tray == null)
             {
-                tray = new Forms.NotifyIcon { Icon = Drawing.SystemIcons.Application, Text = "彩虹岛台服启动器" };
+                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("app.ico"))
+                using (var icon = new Drawing.Icon(stream, new Drawing.Size(32, 32))) trayIcon = (Drawing.Icon)icon.Clone();
+                tray = new Forms.NotifyIcon { Icon = trayIcon, Text = "LaTale Garden · 彩虹岛台服启动器" };
                 tray.DoubleClick += (s, e) => Dispatcher.BeginInvoke(new Action(RestoreFromTray));
                 var menu = new Forms.ContextMenuStrip();
                 menu.Items.Add("打开启动器", null, (s, e) => Dispatcher.BeginInvoke(new Action(RestoreFromTray)));

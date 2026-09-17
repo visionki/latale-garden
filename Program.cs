@@ -12,7 +12,7 @@ namespace LaTaleGarden
     public static class Program
     {
         public const string TransactionMutex = @"Global\LaTaleGarden.LocaleTransaction.v1";
-        public const string Version = "1.1.1";
+        public const string Version = "1.1.2";
         public const string Author = "visionki";
         public const string AuthorUrl = "https://github.com/visionki";
         public const string ProjectUrl = AuthorUrl + "/latale-garden";

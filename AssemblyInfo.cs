@@ -4,6 +4,6 @@ using System.Runtime.Versioning;
 [assembly: AssemblyDescription("非官方辅助启动器；图形界面、启动监控与区域恢复。")]
 [assembly: AssemblyProduct("LaTale Garden")]
 [assembly: AssemblyCompany("visionki")]
-[assembly: AssemblyVersion("1.1.1.0")]
-[assembly: AssemblyFileVersion("1.1.1.0")]
+[assembly: AssemblyVersion("1.1.2.0")]
+[assembly: AssemblyFileVersion("1.1.2.0")]
 [assembly: TargetFramework(".NETFramework,Version=v4.8")]

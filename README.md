@@ -2,7 +2,7 @@
 
 **彩虹岛台服的轻量启动器。** 遇到中文乱码时，可以用繁体兼容模式启动游戏，也可以随时检查、恢复系统区域设置。
 
-[下载启动器](https://github.com/visionki/latale-garden/releases/download/v1.1.1/LaTaleGarden.exe) · [查看版本更新](https://github.com/visionki/latale-garden/releases) · [反馈问题](https://github.com/visionki/latale-garden/issues)
+[下载启动器](https://github.com/visionki/latale-garden/releases/download/v1.1.2/LaTaleGarden.exe) · [查看版本更新](https://github.com/visionki/latale-garden/releases) · [反馈问题](https://github.com/visionki/latale-garden/issues)
 
 ## 快速开始
 
