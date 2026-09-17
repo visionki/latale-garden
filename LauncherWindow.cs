@@ -86,7 +86,7 @@ namespace LaTaleGarden
             Button("CloseButton").Click += (s, e) => Close();
             Button("SettingsButton").Click += (s, e) => ShowPane("SettingsPane");
             Button("AboutButton").Click += (s, e) => {
-                string current = new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane" }.FirstOrDefault(name => UI<Grid>(name).Visibility == Visibility.Visible);
+                string current = new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane", "UpdatesPane" }.FirstOrDefault(name => UI<Grid>(name).Visibility == Visibility.Visible);
                 if (current != null) aboutReturnPane = current;
                 ShowPane("AboutPane");
             };
@@ -108,14 +108,15 @@ namespace LaTaleGarden
             Button("OpenLogsButton").Click += (s, e) => OpenFolder(active == null ? AppPaths.DataRoot : active.DirectoryPath);
             UI<CheckBox>("CompatibilityToggle").Checked += (s, e) => SaveMode();
             UI<CheckBox>("CompatibilityToggle").Unchecked += (s, e) => SaveMode();
+            InitializeUpdates();
             InitializeRegion();
             Closing += OnClosing;
-            Closed += (s, e) => { if (tray != null) { tray.Visible = false; tray.Dispose(); } if (trayIcon != null) trayIcon.Dispose(); if (activationEvent != null) activationEvent.Dispose(); };
+            Closed += (s, e) => { updateLifetime.Cancel(); if (tray != null) { tray.Visible = false; tray.Dispose(); } if (trayIcon != null) trayIcon.Dispose(); if (activationEvent != null) activationEvent.Dispose(); };
             timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             timer.Tick += (s, e) => PollStatus();
             Loaded += async (s, e) => {
                 loading = false;
-                if (previewPath != null) { await PrepareRegionPreview(); await Dispatcher.InvokeAsync(new Action(SavePreview), DispatcherPriority.ApplicationIdle); return; }
+                if (previewPath != null) { await PrepareRegionPreview(); PrepareUpdatePreview(); await Dispatcher.InvokeAsync(new Action(SavePreview), DispatcherPriority.ApplicationIdle); return; }
                 activationEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, Program.ActivationEventName);
                 string pending = AppPaths.PendingSessions().FirstOrDefault();
                 if (pending != null)
@@ -135,7 +136,7 @@ namespace LaTaleGarden
         }
         private void ShowPane(string pane)
         {
-            foreach (string name in new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane", "AboutPane" }) UI<Grid>(name).Visibility = name == pane ? Visibility.Visible : Visibility.Collapsed;
+            foreach (string name in new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane", "AboutPane", "UpdatesPane" }) UI<Grid>(name).Visibility = name == pane ? Visibility.Visible : Visibility.Collapsed;
         }
         private void OpenProjectLink(string url)
         {
@@ -164,7 +165,7 @@ namespace LaTaleGarden
             settings.SettleSeconds = (int)((ComboBoxItem)UI<ComboBox>("SettleCombo").SelectedItem).Tag;
             settings.MinimizeAfterStart = UI<CheckBox>("MinimizeCheck").IsChecked == true;
             settings.Normalize();
-            if (SavePreferences()) Text("SettingsNote").Text = "已保存，下次启动时使用。";
+            if (SavePreferences()) Text("SettingsNote").Text = SaveUpdateOptions() ? "已保存，下次启动时使用。" : "更新偏好未保存，请稍后重试。";
         }
         private bool SavePreferences()
         {
@@ -196,7 +197,7 @@ namespace LaTaleGarden
         }
         private async Task PrimaryAction()
         {
-            if (starting) return;
+            if (starting || installingUpdate || UpdateInstaller.Applying()) return;
             if (stage == "running" && currentClient != null && Native.SameProcess(currentClient.Id, currentClient.StartTicks)) { Native.FocusProcess(currentClient.Id, currentClient.StartTicks); return; }
             if (stage == "waiting" || stage == "initializing") { FocusOfficial(); return; }
             if (busy) return;
@@ -254,6 +255,7 @@ namespace LaTaleGarden
         private void OnClosing(object sender, CancelEventArgs e)
         {
             if (closingAllowed || previewPath != null) { timer.Stop(); return; }
+            if (installingUpdate) { e.Cancel = true; return; }
             if (busy || starting)
             {
                 e.Cancel = true; closeWhenFinished = true; ShowPane("HomePane"); CancelLaunch();
@@ -334,7 +336,7 @@ namespace LaTaleGarden
             Button("CancelButton").Visibility = busy && next != "restoring" && next != "region-working" ? Visibility.Visible : Visibility.Collapsed;
             Button("CancelButton").IsEnabled = true;
             Text("CountdownText").Visibility = Visibility.Collapsed;
-            Text("FooterText").Text = next == "recovery" ? "恢复完成前请保留窗口" : "更新与登录由官方启动器完成";
+            Text("FooterText").Text = next == "recovery" ? "恢复完成前请保留窗口" : "游戏更新与登录由官方启动器完成";
             UpdateRegionAvailability();
         }
         private bool DetectExistingClient()
@@ -361,6 +363,7 @@ namespace LaTaleGarden
         private string DiagnosticText()
         {
             string result = "LaTale Garden " + Program.Version + "\r\n" + Native.OSLabel() + "\r\n进程 ACP=" + Native.GetACP() + "；系统 LCID=" + Native.GetSystemDefaultLCID() + "\r\n游戏目录=" + settings.GameDirectory + "\r\n兼容模式=" + settings.Compatibility + "\r\n\r\n" + Text("RegionDetailsText").Text + "\r\n\r\n";
+            try { string updateLog = Path.Combine(UpdatePaths.Root, "update.log"); if (File.Exists(updateLog)) result += "启动器更新记录：\r\n" + File.ReadAllText(updateLog) + "\r\n\r\n"; } catch { }
             string directory = active == null ? AppPaths.LatestSession() : active.DirectoryPath;
             if (directory != null && File.Exists(Path.Combine(directory, "launch.log")))
             {

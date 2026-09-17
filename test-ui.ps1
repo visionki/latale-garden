@@ -11,3 +11,8 @@ $testExe = Join-Path $PSScriptRoot 'dist\RegionUiTests.exe'
 if ($LASTEXITCODE -ne 0) { throw 'UI test compilation failed.' }
 & $testExe $ResultDirectory
 if ($LASTEXITCODE -ne 0) { throw 'UI tests failed.' }
+$updateTestExe = Join-Path $PSScriptRoot 'dist\UpdateUiTests.exe'
+& (Join-Path $framework 'csc.exe') /nologo /target:exe /platform:x64 /langversion:5 ('/out:' + $updateTestExe) @refs (Join-Path $PSScriptRoot 'Tests\UpdateUiTests.cs')
+if ($LASTEXITCODE -ne 0) { throw 'Update UI test compilation failed.' }
+& $updateTestExe (Join-Path $ResultDirectory 'updates')
+if ($LASTEXITCODE -ne 0) { throw 'Update UI tests failed.' }

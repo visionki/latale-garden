@@ -2,7 +2,7 @@
 
 **彩虹岛台服的轻量启动器。** 遇到中文乱码时，可以用繁体兼容模式启动游戏，也可以随时检查、恢复系统区域设置。
 
-[下载启动器](https://github.com/visionki/latale-garden/releases/download/v1.1.2/LaTaleGarden.exe) · [查看版本更新](https://github.com/visionki/latale-garden/releases) · [反馈问题](https://github.com/visionki/latale-garden/issues)
+[下载启动器](https://github.com/visionki/latale-garden/releases/download/v1.1.3/LaTaleGarden.exe) · [查看版本更新](https://github.com/visionki/latale-garden/releases) · [反馈问题](https://github.com/visionki/latale-garden/issues)
 
 ## 快速开始
 
@@ -26,6 +26,8 @@
 | 手动切换简体或繁体 | 退出游戏和官方启动器，在“区域管理”中选择并应用。该选择会保留，完整生效需要重启电脑。 |
 | 排查失败原因 | 打开“启动记录”，查看或导出诊断日志。 |
 | 找到作者或反馈问题 | 点击右上角“关于与反馈”；启动记录页也有反馈入口。 |
+| 更新启动器 | 点击左下方“更新与动态”，或在“关于与反馈”中检查更新。 |
+| 调整更新提醒 | 在“设置”中选择自动检查、自动下载、测试版更新与项目动态，并点击“保存设置”。 |
 
 ![区域管理](docs/region-management.png)
 
@@ -37,7 +39,15 @@
 
 **显示游戏已启动，但文字仍乱码？** “游戏已启动”表示程序已经运行。可以退出游戏后，在设置中适当延长“游戏出现后的初始化等待”，再尝试一次；仍有问题时请提交反馈。
 
-**移动位置或升级需要重新设置吗？** 先退出旧版窗口和托盘图标，再打开新版。使用同一个 Windows 账户时会保留原游戏目录和设置。新版处理过的区域记录请继续用新版打开。
+**如何更新启动器？** v1.1.3 起会在启动时自动检查更新，每天最多一次。发现新版后，点击“下载更新”，下载完成再点“重启启动器并更新”。也可以稍后再说或忽略当前版本；自动下载默认关闭。
+
+**还在使用 v1.1.2 或更早版本？** 需要先手动下载新版一次：退出旧版窗口和托盘图标，再用下载的 EXE 替换旧文件。以后就能在启动器里更新。
+
+**移动位置或升级需要重新设置吗？** 使用同一个 Windows 账户时会保留原游戏目录和设置。内置更新保持原文件位置和名称；新版处理过的区域记录请继续用新版打开。
+
+**更新失败或连不上 GitHub？** 可以继续使用当前版本，稍后重试，也可以从上方下载入口手动更新。正在启动游戏或恢复区域时，需等流程结束后再安装更新。
+
+![更新与动态页面示例](docs/updates.png)
 
 ## 作者与反馈
 
@@ -84,6 +94,8 @@ LaTale Garden 由原生 WPF 界面、启动监控、区域管理和独立恢复�
 
 设置、日志与恢复记录统一保存在当前 Windows 用户的 `%LOCALAPPDATA%\LaTaleGarden`。换电脑或 Windows 账户后，需要重新选择游戏目录。手动导出的日志写入所选位置。
 
+更新下载、偏好和旧版备份保存在该目录下的 `Updates` 文件夹。替换 EXE 时会在原位置短暂创建临时文件，成功或正常失败后清理；受保护的位置可能需要管理员权限。会保留最近两次更新任务，超过保留数量且满 7 天的旧任务在后续启动时清理。
+
 <details>
 <summary>查看数据文件结构</summary>
 
@@ -91,6 +103,7 @@ LaTale Garden 由原生 WPF 界面、启动监控、区域管理和独立恢复�
 %LOCALAPPDATA%\LaTaleGarden\
 ├── settings.json               游戏目录与偏好设置
 ├── error.log                   异常记录（需要时生成）
+├── Updates\                    更新偏好、下载缓存、签名清单与回退备份
 └── Sessions\
     └── <会话标识>\
         ├── request.json        游戏启动参数
@@ -112,6 +125,7 @@ LaTale Garden 由原生 WPF 界面、启动监控、区域管理和独立恢复�
 .\test.ps1
 .\test-ui.ps1
 .\test-portable.ps1
+.\test-updates.ps1
 ```
 
 `build.ps1` 使用系统 C# 编译器，输出 `dist\LaTaleGarden.exe`，无需下载 NuGet 包。普通测试不修改系统区域、不启动游戏：
@@ -121,6 +135,9 @@ LaTale Garden 由原生 WPF 界面、启动监控、区域管理和独立恢复�
 | `test.ps1` | 启动与区域操作的故障分支、恢复意图，以及 Windows 进程和文件行为。 |
 | `test-ui.ps1` | 原生区域页面的状态、按钮可用性与布局。 |
 | `test-portable.ps1` | 独立 EXE 启动、移动后读取同一设置，以及不产生旁边文件。 |
+| `test-updates.ps1` | 签名、版本选择、下载中断、校验失败、公告与偏好迁移。 |
+
+维护者可运行 `test-update-install.ps1`，使用本机发布签名密钥，在独立测试目录验证真实 EXE 替换、WPF 启动确认、回退和文件占用。运行前关闭启动器；脚本不启动游戏、不修改区域。发布与签名密钥说明见 [发布维护](docs/RELEASING.md)。
 
 另有显式启用的实机检查 `test-region-live.ps1 -AllowSystemLocaleChanges`，会请求管理员权限，**实际切换系统区域并恢复**。退出游戏后再运行，结果异步写入脚本输出的测试目录；查看 `complete.txt`、`results.txt` 与 `baseline.json`。独立保护进程在测试异常退出时尝试恢复基线。此脚本不纳入普通测试步骤。
 
@@ -132,6 +149,7 @@ LaTale Garden 由原生 WPF 界面、启动监控、区域管理和独立恢复�
 | `LaunchEngine.cs` | 启动、等待、取消及恢复流程。 |
 | `RegionManagement.cs` / `LauncherRegion.cs` | 区域检测、手动操作与历史记录处理。 |
 | `WindowsPlatform.cs` | Windows 区域接口、进程身份、窗口操作及子进程管理。 |
+| `UpdateService.cs` / `UpdateInstaller.cs` / `LauncherUpdates.cs` | 签名信息、下载、替换回退及更新与动态界面。 |
 | `Program.cs` / `Models.cs` | 程序入口、恢复进程、项目资料、本地数据与原子 JSON 写入。 |
 | `Tests/` | 流程、界面及实机检查。 |
 | `Assets/` / `ASSETS.md` | 界面美术与素材说明。 |

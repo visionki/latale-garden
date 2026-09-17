@@ -12,7 +12,9 @@ namespace LaTaleGarden
     public static class Program
     {
         public const string TransactionMutex = @"Global\LaTaleGarden.LocaleTransaction.v1";
-        public const string Version = "1.1.2";
+        public const string Version = "1.1.3";
+        public const string ReleaseChannel = "preview";
+        public static string StartupUpdateId;
         public const string Author = "visionki";
         public const string AuthorUrl = "https://github.com/visionki";
         public const string ProjectUrl = AuthorUrl + "/latale-garden";
@@ -47,10 +49,22 @@ namespace LaTaleGarden
                     File.WriteAllText(args[1], Native.OSLabel() + Environment.NewLine + "ConfiguredLocale=" + data.LocaleName + "; ACP=" + data.ACP + "; OEMCP=" + data.OEMCP + "; MACCP=" + data.MACCP + "; ProcessACP=" + data.RuntimeACP + Environment.NewLine + new WindowsPlatform(new SessionFiles(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1])), "diagnostic-session")), null).ReadOnlyCommandCheck(), new UTF8Encoding(false));
                     return 0;
                 }
+                if (args.Length == 2 && args[0] == "--apply-update") return UpdateInstaller.Apply(args[1]);
                 if (args.Length >= 2 && (args[0] == "--worker" || args[0] == "--recover")) return RunWorker(args[1], args[0] == "--recover");
                 if (args.Length == 2 && args[0] == "--region") return RunRegionWorker(args[1]);
                 if (args.Length == 4 && args[0] == "--guard") return RunGuard(args[1], int.Parse(args[2]), long.Parse(args[3]));
                 bool preview = args.Length >= 2 && args[0] == "--render-preview";
+                if (args.Length == 2 && args[0] == "--updated") StartupUpdateId = args[1];
+                else if (!preview)
+                {
+                    try { StartupUpdateId = UpdateInstaller.PendingStartup(); }
+                    catch (Exception ex) { UpdatePaths.Log("未能读取上次更新记录：" + ex.Message); }
+                }
+                if (!preview && StartupUpdateId == null && UpdateInstaller.Applying())
+                {
+                    if (args.Length == 0) MessageBox.Show("启动器正在更新，请稍等片刻。", "LaTale Garden");
+                    return 0;
+                }
                 string user = WindowsIdentity.GetCurrent().User.Value;
                 using (var mutex = new Mutex(false, @"Local\LaTaleGarden.GUI." + user + (preview ? ".Preview" : "")))
                 {

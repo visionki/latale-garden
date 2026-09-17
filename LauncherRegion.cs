@@ -42,7 +42,7 @@ namespace LaTaleGarden
         private async void RefreshRegionFromEvent() { await RefreshRegionAsync(true); }
         private async Task RefreshRegionAsync(bool force)
         {
-            if (previewPath != null || closingAllowed) return;
+            if (previewPath != null || closingAllowed || installingUpdate) return;
             if (refreshingRegion) { if (force) refreshRegionAgain = true; return; }
             if (!force && DateTime.UtcNow - lastRegionAttempt < TimeSpan.FromSeconds(5)) return;
             refreshingRegion = true; lastRegionAttempt = DateTime.UtcNow;
@@ -117,7 +117,7 @@ namespace LaTaleGarden
         private void UpdateRegionAvailability()
         {
             if (UI<Button>("RegionApplyButton") == null) return;
-            bool idle = !busy && !starting && !refreshingRegion && (regionReport == null || !regionReport.WriteBusy);
+            bool idle = !busy && !starting && !refreshingRegion && !installingUpdate && (regionReport == null || !regionReport.WriteBusy);
             bool readable = regionReport != null && regionFresh;
             Button("RegionRestoreButton").IsEnabled = idle && readable && regionReport.Backup != null;
             Button("RegionApplyButton").IsEnabled = idle && readable && !regionReport.GameRunning && regionReport.Configured.ACP != "65001";
