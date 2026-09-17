@@ -24,12 +24,13 @@
       <Grid x:Name="Artwork" Grid.Column="0" ClipToBounds="True">
         <Image x:Name="HeroImage" Stretch="UniformToFill"/>
         <TextBlock Text="回到你的彩虹岛" FontFamily="KaiTi, Microsoft YaHei UI" FontSize="34" FontWeight="Bold" Foreground="White" Margin="67,216,0,0" VerticalAlignment="Top"><TextBlock.Effect><DropShadowEffect Color="#2383B8" BlurRadius="9" ShadowDepth="1" Opacity="0.6"/></TextBlock.Effect></TextBlock>
-        <Border VerticalAlignment="Bottom" Background="#25293832" Padding="23,13"><TextBlock x:Name="VersionText" Text="非官方辅助启动器  ·  v1.1.0" Foreground="White" FontSize="11"/></Border>
+        <Border VerticalAlignment="Bottom" Background="#25293832" Padding="23,13"><TextBlock x:Name="VersionText" Text="非官方辅助启动器" Foreground="White" FontSize="11"/></Border>
       </Grid>
       <Grid Grid.Column="1" Background="{StaticResource Paper}">
         <Grid.RowDefinitions><RowDefinition Height="43"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <Border BorderBrush="#E8D9C2" BorderThickness="0,0,0,1" Background="#FFF5E4" x:Name="DragBar">
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,9,0">
+            <Button x:Name="AboutButton" Style="{StaticResource Quiet}" Width="40" FontFamily="Segoe MDL2 Assets" Content="&#xE946;" FontSize="18" ToolTip="关于与反馈" AutomationProperties.Name="关于与反馈"/>
             <Button x:Name="SettingsButton" Style="{StaticResource Quiet}" Width="40" FontFamily="Segoe MDL2 Assets" Content="&#xE713;" FontSize="18" ToolTip="设置" AutomationProperties.Name="设置"/>
             <Rectangle Width="1" Height="20" Fill="#E0CCAF" Margin="4,0"/>
             <Button x:Name="MinimizeButton" Style="{StaticResource Quiet}" Width="39" Content="—" FontSize="18" AutomationProperties.Name="最小化"/>
@@ -85,7 +86,7 @@
             <TextBlock Text="等待游戏的最长时间" FontSize="13"/><ComboBox x:Name="WaitCombo" Margin="0,7,0,18"/>
             <TextBlock Text="游戏出现后的初始化等待" FontSize="13"/><ComboBox x:Name="SettleCombo" Margin="0,7,0,8"/><TextBlock Text="出现窗口后继续等待，再恢复系统区域。若仍偶发乱码，可以适当延长。" TextWrapping="Wrap" FontSize="11" Foreground="#94816A" Margin="0,0,0,20"/>
             <CheckBox x:Name="MinimizeCheck" Content="成功后收起到系统托盘" FontSize="13" Margin="0,0,0,22"/>
-            <Border BorderBrush="#E2CFB1" BorderThickness="0,1,0,0" Padding="0,18,0,0"><StackPanel><TextBlock Text="关于兼容模式" FontSize="14"/><TextBlock Text="兼容模式沿用系统区域临时切换方式，实际效果取决于 Windows 与游戏版本；窗口出现不代表文字已验证。Win10 的乱码修复效果需要实机确认。" TextWrapping="Wrap" FontSize="11.5" Foreground="#96826B" Margin="0,8,0,0"/><TextBlock x:Name="SystemInfoText" TextWrapping="Wrap" FontSize="10.5" Foreground="#A3927B" Margin="0,13,0,0"/></StackPanel></Border>
+            <Border BorderBrush="#E2CFB1" BorderThickness="0,1,0,0" Padding="0,18,0,0"><StackPanel><TextBlock Text="关于兼容模式" FontSize="14"/><TextBlock Text="兼容模式会在启动前临时调整系统区域，完成后恢复原设置。实际效果取决于 Windows 与游戏版本；Win10 的乱码修复效果仍需实机确认。" TextWrapping="Wrap" FontSize="11.5" Foreground="#96826B" Margin="0,8,0,0"/><TextBlock x:Name="SystemInfoText" TextWrapping="Wrap" FontSize="10.5" Foreground="#A3927B" Margin="0,13,0,0"/></StackPanel></Border>
             <Button x:Name="SaveSettingsButton" Content="保存设置" Style="{StaticResource Outline}" HorizontalAlignment="Left" Padding="20,10" Margin="0,23,0,0"/>
             <TextBlock x:Name="SettingsNote" Text="设置与日志保存在当前用户的本地应用数据目录。" TextWrapping="Wrap" FontSize="10.5" Foreground="#A2927D" Margin="0,14,0,0"/>
           </StackPanel>
@@ -94,7 +95,23 @@
           <Grid.RowDefinitions><RowDefinition Height="43"/><RowDefinition Height="*"/><RowDefinition Height="50"/></Grid.RowDefinitions>
           <DockPanel><Button x:Name="LogsBack" Content="‹  返回" Style="{StaticResource Quiet}" Padding="0,5,15,5"/><TextBlock Text="启动记录" FontSize="21" VerticalAlignment="Center"/></DockPanel>
           <TextBox x:Name="LogText" Grid.Row="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas, Microsoft YaHei UI" FontSize="11.5" Margin="0,8,0,0" AutomationProperties.Name="启动日志"/>
-          <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Bottom"><Button x:Name="ExportLogsButton" Content="导出诊断日志" Style="{StaticResource Outline}"/><Button x:Name="OpenLogsButton" Content="打开日志目录" Style="{StaticResource Quiet}" Margin="10,0,0,0"/></StackPanel>
+          <Grid Grid.Row="2" VerticalAlignment="Bottom"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Button x:Name="ExportLogsButton" Content="导出诊断日志" Style="{StaticResource Outline}"/><Button x:Name="OpenLogsButton" Grid.Column="1" Content="打开日志目录" Style="{StaticResource Quiet}" Padding="6,7"/><Button x:Name="FeedbackButton" Grid.Column="2" Content="反馈问题 ↗" Style="{StaticResource Quiet}" Foreground="#278E64" Padding="6,7"/></Grid>
+        </Grid>
+        <Grid x:Name="AboutPane" Grid.Row="1" Margin="27,17,27,20" Visibility="Collapsed">
+          <Grid.RowDefinitions><RowDefinition Height="42"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <DockPanel><Button x:Name="AboutBack" Style="{StaticResource Quiet}" Content="‹  返回" Padding="0,5,15,5"/><TextBlock Text="关于与反馈" FontSize="21" VerticalAlignment="Center"/></DockPanel>
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,12,0,0">
+            <StackPanel>
+              <Border BorderBrush="#DFCFB7" BorderThickness="1" CornerRadius="11" Background="#FFFCF5" Padding="18,19"><StackPanel><TextBlock Text="LaTale Garden" FontSize="25" FontWeight="SemiBold"/><TextBlock Text="彩虹岛台服 · 非官方启动器" FontSize="12" Foreground="#918575" Margin="0,5,0,0"/><TextBlock Text="更方便地启动游戏，检查与恢复区域设置。" TextWrapping="Wrap" FontSize="12" Margin="0,17,0,0"/><TextBlock x:Name="AboutVersionText" FontSize="11" Foreground="#A3927B" Margin="0,12,0,0"/></StackPanel></Border>
+              <Border BorderBrush="#E2CFB1" BorderThickness="0,0,0,1" Padding="0,13,0,13" Margin="0,6,0,0"><DockPanel><Button x:Name="AboutAuthorButton" DockPanel.Dock="Right" Style="{StaticResource Quiet}" Foreground="#278E64" Padding="7,5" AutomationProperties.Name="作者 visionki 的 GitHub 主页"/><StackPanel VerticalAlignment="Center"><TextBlock Text="作者与维护者" FontSize="13"/><TextBlock Text="在 GitHub 上查看作者" FontSize="10.5" Foreground="#A3927B" Margin="0,3,0,0"/></StackPanel></DockPanel></Border>
+              <Button x:Name="AboutProjectButton" Content="GitHub 项目主页 ↗" Style="{StaticResource Outline}" HorizontalContentAlignment="Center" Margin="0,17,0,0" Padding="12,10"/>
+              <TextBlock Text="使用中遇到问题？" FontSize="14" FontWeight="SemiBold" Margin="0,23,0,0"/>
+              <TextBlock Text="欢迎通过 GitHub Issues 反馈问题或提出建议。请说明 Windows 版本、遇到的情况和操作步骤；也可以附上截图或诊断日志。" TextWrapping="Wrap" FontSize="11.5" Foreground="#918575" LineHeight="19" Margin="0,7,0,0"/>
+              <Button x:Name="AboutFeedbackButton" Content="去 GitHub 反馈问题 ↗" Style="{StaticResource Coral}" Margin="0,12,0,0" Padding="12,9" FontSize="14"/>
+              <Button x:Name="AboutLogsButton" Content="查看与导出诊断日志 ›" Style="{StaticResource Quiet}" Foreground="#278E64" HorizontalAlignment="Left" Padding="0,9" Margin="0,2,0,0"/>
+              <TextBlock Text="独立维护的非官方辅助工具，与游戏运营方无隶属关系。游戏更新、登录与账号服务由官方提供。" TextWrapping="Wrap" FontSize="10.5" Foreground="#A3927B" LineHeight="17" Margin="0,14,0,0"/>
+            </StackPanel>
+          </ScrollViewer>
         </Grid>
       </Grid>
     </Grid>

@@ -12,7 +12,11 @@ namespace LaTaleGarden
     public static class Program
     {
         public const string TransactionMutex = @"Global\LaTaleGarden.LocaleTransaction.v1";
-        public const string Version = "1.1.0";
+        public const string Version = "1.1.1";
+        public const string Author = "visionki";
+        public const string AuthorUrl = "https://github.com/visionki";
+        public const string ProjectUrl = AuthorUrl + "/latale-garden";
+        public const string IssuesUrl = ProjectUrl + "/issues";
         public static string ActivationEventName { get { return @"Local\LaTaleGarden.Activate." + WindowsIdentity.GetCurrent().User.Value; } }
         [STAThread]
         public static int Main(string[] args)

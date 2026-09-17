@@ -178,6 +178,8 @@ namespace LaTaleGarden
             catch (Exception ex) { SetRegionResult(ex.Message); }
             if (previewPane.StartsWith("region", StringComparison.Ordinal)) ShowPane("RegionPane");
             if (previewPane == "region-details") UI<Expander>("RegionDetailsExpander").IsExpanded = true;
+            if (previewPane == "about") ShowPane("AboutPane");
+            if (previewPane == "logs") { RefreshLogs(); ShowPane("LogsPane"); }
         }
     }
 }

@@ -30,6 +30,7 @@ namespace LaTaleGarden
         private bool busy, starting, closeWhenFinished, closingAllowed, loading = true;
         private ClientInfo currentClient;
         private string stage = "ready";
+        private string aboutReturnPane = "HomePane";
         private Forms.NotifyIcon tray;
         private System.Threading.EventWaitHandle activationEvent;
         private DateTime sessionStarted;
@@ -65,6 +66,11 @@ namespace LaTaleGarden
             UI<Grid>("Surface").Clip = new RectangleGeometry(new Rect(0, 0, 1078, 688), 16, 16);
             UI<Image>("HeroImage").Source = LoadImage("hero.png");
             Text("VersionText").Text = "非官方辅助启动器  ·  v" + Program.Version;
+            Text("AboutVersionText").Text = "版本 " + Program.Version + " · 公开测试版";
+            Button("AboutAuthorButton").Content = "@" + Program.Author + " ↗";
+            Button("AboutAuthorButton").ToolTip = Program.AuthorUrl;
+            Button("AboutProjectButton").ToolTip = Program.ProjectUrl;
+            Button("AboutFeedbackButton").ToolTip = Button("FeedbackButton").ToolTip = Program.IssuesUrl;
             Button("LaunchButton").Tag = LoadImage("launch-button.png");
             UI<TextBox>("DirectoryText").Text = settings.GameDirectory;
             UI<CheckBox>("CompatibilityToggle").IsChecked = settings.Compatibility;
@@ -77,6 +83,17 @@ namespace LaTaleGarden
             Button("MinimizeButton").Click += (s, e) => WindowState = WindowState.Minimized;
             Button("CloseButton").Click += (s, e) => Close();
             Button("SettingsButton").Click += (s, e) => ShowPane("SettingsPane");
+            Button("AboutButton").Click += (s, e) => {
+                string current = new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane" }.FirstOrDefault(name => UI<Grid>(name).Visibility == Visibility.Visible);
+                if (current != null) aboutReturnPane = current;
+                ShowPane("AboutPane");
+            };
+            Button("AboutBack").Click += (s, e) => ShowPane(aboutReturnPane);
+            Button("AboutAuthorButton").Click += (s, e) => OpenProjectLink(Program.AuthorUrl);
+            Button("AboutProjectButton").Click += (s, e) => OpenProjectLink(Program.ProjectUrl);
+            Button("AboutFeedbackButton").Click += (s, e) => OpenProjectLink(Program.IssuesUrl);
+            Button("FeedbackButton").Click += (s, e) => OpenProjectLink(Program.IssuesUrl);
+            Button("AboutLogsButton").Click += (s, e) => { RefreshLogs(); ShowPane("LogsPane"); };
             Button("SettingsBack").Click += (s, e) => ShowPane("HomePane");
             Button("LogsBack").Click += (s, e) => ShowPane("HomePane");
             Button("LogsButton").Click += (s, e) => { RefreshLogs(); ShowPane("LogsPane"); };
@@ -116,7 +133,12 @@ namespace LaTaleGarden
         }
         private void ShowPane(string pane)
         {
-            foreach (string name in new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane" }) UI<Grid>(name).Visibility = name == pane ? Visibility.Visible : Visibility.Collapsed;
+            foreach (string name in new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane", "AboutPane" }) UI<Grid>(name).Visibility = name == pane ? Visibility.Visible : Visibility.Collapsed;
+        }
+        private void OpenProjectLink(string url)
+        {
+            try { using (var browser = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })) { } }
+            catch (Exception ex) { MessageBox.Show(this, "无法打开浏览器，请手动访问：\n" + url + "\n\n" + ex.Message, "打开 GitHub", MessageBoxButton.OK, MessageBoxImage.Information); }
         }
         private void AddChoices(string name, int[] numbers, string unit, int selected)
         {

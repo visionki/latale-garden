@@ -1,0 +1,48 @@
+name: 遇到问题
+description: 反馈启动、乱码、区域恢复或界面问题。
+title: "[问题] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量说明问题发生前做了什么，方便定位原因。
+        如需附日志，可在启动器的“启动记录”中点击“导出诊断日志”。日志含本机路径和区域信息，上传前请检查并遮去个人信息。
+  - type: input
+    id: launcher-version
+    attributes:
+      label: 启动器版本
+      description: 点击启动器右上角“关于与反馈”查看。
+      placeholder: 例如 1.1.1
+    validations:
+      required: true
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Windows 版本
+      options:
+        - Windows 11
+        - Windows 10
+        - 不确定或其他版本
+    validations:
+      required: true
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: 是否开启“繁体兼容模式”？
+      options:
+        - 开启
+        - 关闭
+        - 不确定或与启动无关
+  - type: textarea
+    id: description
+    attributes:
+      label: 遇到了什么问题？
+      description: 请说明操作步骤、实际表现，以及希望出现的结果。
+      placeholder: 例如：点击启动游戏后，官方启动器打开了，但进入游戏后文字仍然乱码。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 截图、诊断日志或补充信息（可选）
+      description: 可以把文件拖到输入框，也可以直接补充文字。请勿提供游戏密码或验证码。
