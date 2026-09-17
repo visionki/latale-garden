@@ -1,0 +1,162 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Security.Principal;
+using System.Text;
+using System.Threading;
+using System.Windows;
+
+namespace LaTaleGarden
+{
+    public static class Program
+    {
+        public const string TransactionMutex = @"Global\LaTaleGarden.LocaleTransaction.v1";
+        public static string ActivationEventName { get { return @"Local\LaTaleGarden.Activate." + WindowsIdentity.GetCurrent().User.Value; } }
+        [STAThread]
+        public static int Main(string[] args)
+        {
+            try
+            {
+                // All runtime options live in the executable; no adjacent .config is needed.
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"))
+                {
+                    if (key == null || Convert.ToInt32(key.GetValue("Release", 0)) < 528040)
+                        throw new NotSupportedException("请先安装 .NET Framework 4.8 或更高版本，再打开启动器。");
+                }
+                AppContext.SetSwitch("Switch.System.Windows.DoNotScaleForDpiChanges", false);
+                if (args.Length > 0 && args[0] == "--probe")
+                {
+                    Console.WriteLine("GetACP=" + Native.GetACP() + "; GetSystemDefaultLCID=" + Native.GetSystemDefaultLCID());
+                    return 0;
+                }
+                if (args.Length > 1 && args[0] == "--diagnostics")
+                {
+                    var data = new WindowsPlatform(new SessionFiles(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1])), "diagnostic-session")), null).CaptureLocale();
+                    File.WriteAllText(args[1], Native.OSLabel() + Environment.NewLine + "ConfiguredLocale=" + data.LocaleName + "; ACP=" + data.ACP + "; OEMCP=" + data.OEMCP + "; MACCP=" + data.MACCP + "; ProcessACP=" + data.RuntimeACP + Environment.NewLine + new WindowsPlatform(new SessionFiles(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1])), "diagnostic-session")), null).ReadOnlyCommandCheck(), new UTF8Encoding(false));
+                    return 0;
+                }
+                if (args.Length >= 2 && (args[0] == "--worker" || args[0] == "--recover")) return RunWorker(args[1], args[0] == "--recover");
+                if (args.Length == 4 && args[0] == "--guard") return RunGuard(args[1], int.Parse(args[2]), long.Parse(args[3]));
+                bool preview = args.Length == 2 && args[0] == "--render-preview";
+                string user = WindowsIdentity.GetCurrent().User.Value;
+                using (var mutex = new Mutex(false, @"Local\LaTaleGarden.GUI." + user + (preview ? ".Preview" : "")))
+                {
+                    if (!TryLock(mutex, 0))
+                    {
+                        try { using (var activation = EventWaitHandle.OpenExisting(ActivationEventName)) activation.Set(); } catch { }
+                        foreach (var other in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(AppPaths.Executable)))
+                            using (other) if (other.Id != Process.GetCurrentProcess().Id && Native.VisibleWindow(other.Id) != IntPtr.Zero) Native.FocusProcess(other.Id, other.StartTime.ToUniversalTime().Ticks);
+                        return 0;
+                    }
+                    try
+                    {
+                        var app = new Application();
+                        app.DispatcherUnhandledException += (s, e) => {
+                            MessageBox.Show("界面遇到错误：" + e.Exception.Message + "\n若启动流程正在进行，独立进程仍会负责恢复。", "彩虹岛启动器", MessageBoxButton.OK, MessageBoxImage.Error);
+                            e.Handled = true;
+                        };
+                        return app.Run(new LauncherWindow(preview ? args[1] : null));
+                    }
+                    finally { mutex.ReleaseMutex(); }
+                }
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    Directory.CreateDirectory(AppPaths.DataRoot);
+                    File.AppendAllText(Path.Combine(AppPaths.DataRoot, "error.log"), DateTime.Now + " " + ex + Environment.NewLine, new UTF8Encoding(false));
+                }
+                catch { }
+                if (args.Length == 0) MessageBox.Show(ex.Message, "彩虹岛启动器", MessageBoxButton.OK, MessageBoxImage.Error);
+                return 1;
+            }
+        }
+        public static bool TryLock(Mutex mutex, int timeout)
+        {
+            try { return mutex.WaitOne(timeout); } catch (AbandonedMutexException) { return true; }
+        }
+        private static SessionFiles OpenSession(string path)
+        {
+            string full = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
+            Guid id;
+            if (!Guid.TryParseExact(Path.GetFileName(full), "N", out id)) throw new InvalidDataException("会话标识无效。");
+            if (!Directory.Exists(full)) throw new DirectoryNotFoundException("启动会话不存在。");
+            return new SessionFiles(full);
+        }
+        private static int RunWorker(string directory, bool recover)
+        {
+            var files = OpenSession(directory);
+            if (!Native.IsAdmin) { files.Status("failed", "没有取得管理员权限，未执行区域切换。", true, null, 0); return 2; }
+            using (var mutex = new Mutex(false, TransactionMutex))
+            {
+                if (!TryLock(mutex, 3000)) { files.Status("failed", "已有启动或恢复流程正在运行，请稍后再试。", true, null, 0); return 3; }
+                try
+                {
+                    files.Log("辅助进程已取得管理员权限；" + Native.OSLabel());
+                    if (recover)
+                    {
+                        Journal recovery = files.ReadJournal();
+                        if (recovery == null || recovery.Original == null || recovery.Id != Path.GetFileName(files.DirectoryPath)) throw new InvalidDataException("恢复记录缺失或损坏，无法自动恢复。请导出日志，按日志中的原区域检查 Windows 系统区域设置。");
+                        files.Status("restoring", "正在恢复上次保存的系统区域…", false, null, 0);
+                        bool restored = LaunchEngine.RestorePending(files, new WindowsPlatform(files, null), recovery);
+                        files.Status(restored ? "cancelled" : "recovery", restored ? "原区域设置已恢复，可以重新启动。" : "恢复未完成，请查看日志后重试。", true, null, 0);
+                        return restored ? 0 : 4;
+                    }
+                    // Do not create a fresh transaction over a previous unfinished backup.
+                    string parent = Path.GetDirectoryName(files.DirectoryPath);
+                    foreach (string sibling in Directory.GetDirectories(parent))
+                    {
+                        if (SessionFiles.NeedsRecovery(sibling)) throw new InvalidOperationException("检测到未完成或损坏的恢复记录，请先处理原设置恢复。");
+                    }
+                    LaunchRequest request = JsonFile.Read<LaunchRequest>(files.FilePath("request.json"));
+                    request.WaitSeconds = Math.Max(300, Math.Min(7200, request.WaitSeconds));
+                    request.SettleSeconds = Math.Max(10, Math.Min(120, request.SettleSeconds));
+                    new LaunchEngine(files, new WindowsPlatform(files, request)).Run(request);
+                    var status = JsonFile.Read<SessionStatus>(files.FilePath("status.json"));
+                    return status.Stage == "running" ? 0 : 1;
+                }
+                catch (Exception ex)
+                {
+                    files.Log("辅助进程异常：" + ex);
+                    Journal journal = files.ReadJournal();
+                    bool hasBrokenRecord = SessionFiles.NeedsRecovery(files.DirectoryPath) && (journal == null || journal.Original == null || journal.Id != Path.GetFileName(files.DirectoryPath));
+                    bool restored = !hasBrokenRecord && (journal == null || !journal.Pending || LaunchEngine.RestorePending(files, new WindowsPlatform(files, null), journal));
+                    files.Status(restored ? "failed" : "recovery", ex.Message + (restored ? "" : " 原设置尚未恢复。"), true, null, 0);
+                    return 5;
+                }
+                finally { mutex.ReleaseMutex(); }
+            }
+        }
+        private static int RunGuard(string directory, int workerPid, long workerTicks)
+        {
+            if (!Native.IsAdmin) return 2;
+            var files = OpenSession(directory);
+            File.WriteAllText(files.FilePath("guard.ready"), Process.GetCurrentProcess().Id.ToString());
+            while (Native.SameProcess(workerPid, workerTicks)) Thread.Sleep(500);
+            using (var mutex = new Mutex(false, TransactionMutex))
+            {
+                if (!TryLock(mutex, 15000)) { files.Log("恢复进程未取得事务锁，恢复记录仍保留。"); return 3; }
+                try
+                {
+                    Journal journal = files.ReadJournal();
+                    if (journal == null || journal.Original == null || journal.Id != Path.GetFileName(files.DirectoryPath))
+                    {
+                        files.Log("独立恢复进程无法读取有效备份；未猜测原设置。");
+                        files.Status("recovery", "恢复记录无法读取。请导出日志并检查原区域设置。", true, null, 0);
+                        return 4;
+                    }
+                    if (!journal.Pending) return 0;
+                    files.Log("独立恢复进程发现辅助进程退出且恢复未完成，接管恢复。");
+                    try { files.Status("restoring", "独立进程正在恢复原区域设置…", false, null, 0); }
+                    catch (Exception ex) { files.Log("状态写入失败，仍继续恢复：" + ex.Message); }
+                    bool restored = LaunchEngine.RestorePending(files, new WindowsPlatform(files, null), journal);
+                    files.Status(restored ? "cancelled" : "recovery", restored ? "独立恢复已完成。可关闭官方启动器后重新尝试。" : "独立恢复未完成，备份已保留，请点击恢复原设置。", true, null, 0);
+                    return restored ? 0 : 4;
+                }
+                finally { mutex.ReleaseMutex(); }
+            }
+        }
+    }
+}

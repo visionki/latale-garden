@@ -1,0 +1,22 @@
+PASS success waits for new client window and initialization buffer, restores original Japanese locale
+PASS standard mode never captures or modifies locale and never starts a guard
+PASS cancel before preparation does not modify locale
+PASS cancel while waiting restores once
+PASS GUI process exit triggers restoration
+PASS timeout restores original settings
+PASS invalid game and existing game stop before any locale operation
+PASS watchdog handshake failure prevents locale modification
+PASS partial locale-setting failure rolls back and never starts official launcher
+PASS official launcher failure rolls back
+PASS transient restore errors retry and verify before clearing journal
+PASS permanent restore failure retains journal and produces recoverable state
+PASS read-back mismatch cannot be reported as restored
+PASS process existence without a visible stable window is insufficient
+PASS UTF-8 configuration is left intact and clearly unsupported by temporary mode
+PASS invalid persisted snapshots rejected before registry writes
+PASS native process identity checks reject reused or incorrect creation timestamps
+PASS argument quoting preserves paths with spaces and trailing slashes
+PASS native Windows job terminates only its test child when its owner handle closes
+PASS read-only identity lookup works for an already running elevated game when accessible
+PASS corrupt or missing recovery records cannot be silently marked restored
+PASS atomic state writes tolerate temporary file locks without losing the intended value

@@ -1,0 +1,12 @@
+/dist/
+/test-results/
+/.vs/
+/bin/
+/obj/
+*.exe
+*.exe.config
+*.zip
+*.tmp
+*.log
+/settings.json
+/Sessions/
