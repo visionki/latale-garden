@@ -145,6 +145,7 @@ public static class EngineTests
                 finally { release.Wait(); locked.Dispose(); }
                 Check(JsonFile.Read<Preferences>(path).WaitMinutes == 60, "Atomic update lost after a file lock");
             });
+            RegionTests.Run(Path.Combine(root, "regions"), Test);
             File.WriteAllLines(Path.Combine(root, "results.txt"), results);
             Console.WriteLine("All " + results.Count + " checks passed; no real locale writes or game launches.");
             return 0;

@@ -20,3 +20,24 @@ PASS native Windows job terminates only its test child when its owner handle clo
 PASS read-only identity lookup works for an already running elevated game when accessible
 PASS corrupt or missing recovery records cannot be silently marked restored
 PASS atomic state writes tolerate temporary file locks without losing the intended value
+PASS completed backup is reapplied even when current values already match, without changing source
+PASS restore preserves non-Chinese locale and exact saved code pages
+PASS successful manual selection persists and keeps the previous launch backup
+PASS partial manual selection failure rolls back the pre-operation values
+PASS failed manual rollback retains the original target for restart recovery
+PASS failed explicit restore retries the chosen backup, never the pre-action wrong locale
+PASS full read-back mismatch rolls a manual selection back
+PASS guard startup failure prevents manual writes
+PASS cancel or owner death before writes leaves settings intact
+PASS owner exit or cancellation during manual write rolls back before commit
+PASS manual choice blocks both existing game and game appearing during guard startup
+PASS explicit backup restore remains possible while game is running
+PASS stale current configuration before or after guard startup prevents writes
+PASS backup changed after confirmation is rejected
+PASS pending source is resolved with a verifiable receipt and unchanged original file
+PASS manual choice can resolve acknowledged corrupt history without deleting evidence
+PASS new pending record after confirmation requires fresh acknowledgement
+PASS pending explicit restore exposes its intended backup, not its starting configuration
+PASS UTF-8 mode and unsupported manual locales are rejected without changes
+PASS malformed and traversing backup references are rejected before writes
+PASS region detection sees another thread holding the real transaction mutex

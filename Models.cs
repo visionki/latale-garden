@@ -52,6 +52,10 @@ namespace LaTaleGarden
         [DataMember] public int WorkerPid;
         [DataMember] public long WorkerStartTicks;
         [DataMember] public string GameDirectory;
+        [DataMember(EmitDefaultValue = false)] public string Operation;
+        [DataMember(EmitDefaultValue = false)] public LocaleSnapshot Target;
+        [DataMember(EmitDefaultValue = false)] public bool Committed;
+        [DataMember(EmitDefaultValue = false)] public JournalReference[] Resolves;
     }
     [DataContract]
     public class SessionStatus
@@ -137,7 +141,8 @@ namespace LaTaleGarden
             string path = Path.Combine(directory, "recovery.json");
             if (!File.Exists(path)) return false;
             var journal = JsonFile.TryRead<Journal>(path);
-            return journal == null || journal.Original == null || journal.Id != Path.GetFileName(directory) || journal.Pending;
+            bool invalid = !RegionCatalog.ValidJournal(journal, Path.GetFileName(directory));
+            return (invalid || journal.Pending) && !RegionCatalog.HasResolution(directory);
         }
     }
     public static class AppPaths

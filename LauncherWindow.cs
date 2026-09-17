@@ -18,7 +18,7 @@ using Drawing = System.Drawing;
 
 namespace LaTaleGarden
 {
-    public class LauncherWindow : Window
+    public partial class LauncherWindow : Window
     {
         private readonly UserControl surface;
         private readonly DispatcherTimer timer;
@@ -44,9 +44,10 @@ namespace LaTaleGarden
                 var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze(); return bitmap;
             }
         }
-        public LauncherWindow(string previewPath)
+        public LauncherWindow(string previewPath, string previewPane = "home")
         {
             this.previewPath = previewPath;
+            this.previewPane = previewPane;
             settings = JsonFile.TryRead<Preferences>(AppPaths.PreferencesPath) ?? new Preferences();
             settings.Normalize();
             if (!DirectoryIsValid(settings.GameDirectory))
@@ -63,6 +64,7 @@ namespace LaTaleGarden
             var viewbox = new Viewbox { Stretch = Stretch.Uniform, Child = surface }; Content = viewbox;
             UI<Grid>("Surface").Clip = new RectangleGeometry(new Rect(0, 0, 1078, 688), 16, 16);
             UI<Image>("HeroImage").Source = LoadImage("hero.png");
+            Text("VersionText").Text = "非官方辅助启动器  ·  v" + Program.Version;
             Button("LaunchButton").Tag = LoadImage("launch-button.png");
             UI<TextBox>("DirectoryText").Text = settings.GameDirectory;
             UI<CheckBox>("CompatibilityToggle").IsChecked = settings.Compatibility;
@@ -87,13 +89,14 @@ namespace LaTaleGarden
             Button("OpenLogsButton").Click += (s, e) => OpenFolder(active == null ? AppPaths.DataRoot : active.DirectoryPath);
             UI<CheckBox>("CompatibilityToggle").Checked += (s, e) => SaveMode();
             UI<CheckBox>("CompatibilityToggle").Unchecked += (s, e) => SaveMode();
+            InitializeRegion();
             Closing += OnClosing;
             Closed += (s, e) => { if (tray != null) { tray.Visible = false; tray.Dispose(); } if (activationEvent != null) activationEvent.Dispose(); };
             timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             timer.Tick += (s, e) => PollStatus();
-            Loaded += (s, e) => {
+            Loaded += async (s, e) => {
                 loading = false;
-                if (previewPath != null) { Dispatcher.BeginInvoke(new Action(SavePreview), DispatcherPriority.ApplicationIdle); return; }
+                if (previewPath != null) { await PrepareRegionPreview(); await Dispatcher.InvokeAsync(new Action(SavePreview), DispatcherPriority.ApplicationIdle); return; }
                 activationEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, Program.ActivationEventName);
                 string pending = AppPaths.PendingSessions().FirstOrDefault();
                 if (pending != null)
@@ -103,6 +106,7 @@ namespace LaTaleGarden
                 }
                 else DetectExistingClient();
                 timer.Start();
+                await RefreshRegionAsync(true);
             };
             if (string.IsNullOrEmpty(settings.GameDirectory)) ShowStatus("ready", "首次使用：请先选择彩虹岛台服安装目录。", false);
         }
@@ -112,7 +116,7 @@ namespace LaTaleGarden
         }
         private void ShowPane(string pane)
         {
-            foreach (string name in new[] { "HomePane", "SettingsPane", "LogsPane" }) UI<Grid>(name).Visibility = name == pane ? Visibility.Visible : Visibility.Collapsed;
+            foreach (string name in new[] { "HomePane", "SettingsPane", "LogsPane", "RegionPane" }) UI<Grid>(name).Visibility = name == pane ? Visibility.Visible : Visibility.Collapsed;
         }
         private void AddChoices(string name, int[] numbers, string unit, int selected)
         {
@@ -178,6 +182,10 @@ namespace LaTaleGarden
             {
                 if (pending != null) active = new SessionFiles(pending);
                 if (active == null) { ShowStatus("failed", "未找到恢复记录，请查看启动日志。", false); return; }
+                if (!RegionCatalog.ValidJournal(active.ReadJournal(), Path.GetFileName(active.DirectoryPath)))
+                {
+                    ShowPane("RegionPane"); SetRegionResult("恢复记录无法使用，请查看检测结果并手动选择区域。"); await RefreshRegionAsync(true); return;
+                }
             }
             else
             {
@@ -241,9 +249,12 @@ namespace LaTaleGarden
                 SessionStatus status = JsonFile.TryRead<SessionStatus>(active.FilePath("status.json"));
                 if (status != null && status.UpdatedUtc != lastStatusTime)
                 {
+                    bool regionChanged = status.Stage != stage;
                     lastStatusTime = status.UpdatedUtc; latest = status;
                     if (status.ClientPid > 0) currentClient = new ClientInfo { Id = status.ClientPid, StartTicks = status.ClientStartTicks };
                     ShowStatus(status.Stage, status.Message, !status.Finished);
+                    if (status.Finished || regionChanged) RefreshRegionFromEvent();
+                    if (status.Finished) regionOperation = false;
                     Text("CountdownText").Visibility = status.RemainingSeconds > 0 ? Visibility.Visible : Visibility.Collapsed;
                     if (status.RemainingSeconds > 0) Text("CountdownText").Text = "最长还等待 " + (status.RemainingSeconds / 60) + ":" + (status.RemainingSeconds % 60).ToString("00");
                     if (status.Finished && status.Stage != "recovery")
@@ -281,8 +292,13 @@ namespace LaTaleGarden
                 case "failed": title = "这次没有启动成功"; action = "重新启动"; break;
                 case "recovery": title = "原设置尚未恢复"; action = "恢复原设置"; break;
                 case "cancelled": title = "已停止等待"; break;
+                case "region-working": title = "正在处理区域"; action = "处理中…"; break;
+                case "region-done": title = "区域配置已核对"; break;
+                case "region-failed": title = "区域操作未完成"; break;
             }
             Text("StatusTitle").Text = title; Text("StatusMessage").Text = message.Length > 90 ? message.Substring(0, 90) + "…详见启动记录。" : message;
+            Text("StatusMessage").ToolTip = message;
+            if (regionOperation || next.StartsWith("region-", StringComparison.Ordinal)) SetRegionResult(message);
             Text("LaunchLabel").Text = action;
             System.Windows.Automation.AutomationProperties.SetName(Button("LaunchButton"), action);
             Text("LaunchIcon").Text = next == "recovery" ? "↻" : "▶";
@@ -291,10 +307,11 @@ namespace LaTaleGarden
             Button("ChooseDirectoryButton").IsEnabled = !busy && next != "recovery" && next != "running";
             Button("SettingsButton").IsEnabled = !busy && next != "recovery";
             UI<CheckBox>("CompatibilityToggle").IsEnabled = !busy && next != "recovery";
-            Button("CancelButton").Visibility = busy && next != "restoring" ? Visibility.Visible : Visibility.Collapsed;
+            Button("CancelButton").Visibility = busy && next != "restoring" && next != "region-working" ? Visibility.Visible : Visibility.Collapsed;
             Button("CancelButton").IsEnabled = true;
             Text("CountdownText").Visibility = Visibility.Collapsed;
             Text("FooterText").Text = next == "recovery" ? "恢复完成前请保留窗口" : "更新与登录由官方启动器完成";
+            UpdateRegionAvailability();
         }
         private bool DetectExistingClient()
         {
@@ -319,7 +336,7 @@ namespace LaTaleGarden
         }
         private string DiagnosticText()
         {
-            string result = "LaTale Garden 1.0.0\r\n" + Native.OSLabel() + "\r\n进程 ACP=" + Native.GetACP() + "；系统 LCID=" + Native.GetSystemDefaultLCID() + "\r\n游戏目录=" + settings.GameDirectory + "\r\n兼容模式=" + settings.Compatibility + "\r\n\r\n";
+            string result = "LaTale Garden " + Program.Version + "\r\n" + Native.OSLabel() + "\r\n进程 ACP=" + Native.GetACP() + "；系统 LCID=" + Native.GetSystemDefaultLCID() + "\r\n游戏目录=" + settings.GameDirectory + "\r\n兼容模式=" + settings.Compatibility + "\r\n\r\n" + Text("RegionDetailsText").Text + "\r\n\r\n";
             string directory = active == null ? AppPaths.LatestSession() : active.DirectoryPath;
             if (directory != null && File.Exists(Path.Combine(directory, "launch.log")))
             {

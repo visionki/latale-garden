@@ -15,6 +15,7 @@ namespace LaTaleGarden
     public static class Native
     {
         [DllImport("kernel32.dll")] public static extern uint GetACP();
+        [DllImport("kernel32.dll")] public static extern uint GetOEMCP();
         [DllImport("kernel32.dll")] public static extern uint GetSystemDefaultLCID();
         [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] private static extern bool QueryFullProcessImageName(IntPtr process, int flags, StringBuilder name, ref int size);
@@ -116,7 +117,7 @@ namespace LaTaleGarden
         }
         public void Dispose() { if (handle != IntPtr.Zero) { Native.CloseHandle(handle); handle = IntPtr.Zero; } }
     }
-    public sealed class WindowsPlatform : ILaunchPlatform
+    public sealed class WindowsPlatform : IRegionPlatform
     {
         private const string LanguageKey = @"SYSTEM\CurrentControlSet\Control\Nls\Language";
         private const string CodePageKey = @"SYSTEM\CurrentControlSet\Control\Nls\CodePage";
@@ -129,6 +130,14 @@ namespace LaTaleGarden
         public void Sleep(int milliseconds) { Thread.Sleep(milliseconds); }
         public bool Cancelled { get { return File.Exists(files.FilePath("cancel.request")); } }
         public bool OwnerAlive { get { return request == null || Native.SameProcess(request.OwnerPid, request.OwnerStartTicks); } }
+        public bool RegionGameRunning { get { return AnyGameRunning(); } }
+        public static bool AnyGameRunning()
+        {
+            bool found = false;
+            foreach (string name in new[] { "LaTaleClient", "LaTaleLauncher" })
+                foreach (var process in Process.GetProcessesByName(name)) using (process) found = true;
+            return found;
+        }
         public static void ValidateDirectory(string directory)
         {
             if (string.IsNullOrWhiteSpace(directory) || !Path.IsPathRooted(directory)) throw new IOException("请先选择完整的游戏目录。");
@@ -217,6 +226,11 @@ namespace LaTaleGarden
             LocaleSnapshot current = CaptureLocale();
             if (current.LocaleName != "zh-TW" || current.ACP != "950") throw new IOException("繁体区域设置未写入预期值，已停止启动并尝试恢复。");
             files.Log("繁体系统区域已写入；ACP 配置=950。命令成功不代表游戏内部编码已生效。");
+        }
+        public void ApplyRegion(string localeName)
+        {
+            RegionCatalog.Preset(localeName); // Validate the supported manual choices before any write.
+            SetLocale(localeName);
         }
         public void Restore(LocaleSnapshot original)
         {

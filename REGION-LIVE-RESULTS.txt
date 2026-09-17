@@ -1,0 +1,23 @@
+16:06:49 BASELINE zh-CN Default=0804 ACP=936 OEM=936 Mac=10008
+16:06:50 PASS restore  worker completed: 备份配置已重新应用并核对。游戏内文字需实际确认。
+16:06:50 Configured: zh-CN Default=0804 ACP=936 OEM=936 Mac=10008
+16:06:50 Fresh process: ACP=936 OEM=936 LCID=0804
+16:06:50 PASS already matching completed backup was actually reapplied
+16:06:51 PASS set zh-TW worker completed: 所选区域已保存并保留。完整生效需要重启电脑。
+16:06:51 Configured: zh-TW Default=0404 ACP=950 OEM=950 Mac=10002
+16:06:51 Fresh process: ACP=950 OEM=950 LCID=0804
+16:06:51 PASS Traditional Taiwan configuration persists after worker and guard exit
+16:06:52 PASS set zh-CN worker completed: 所选区域已保存并保留。完整生效需要重启电脑。
+16:06:52 Configured: zh-CN Default=0804 ACP=936 OEM=936 Mac=10008
+16:06:52 Fresh process: ACP=936 OEM=936 LCID=0804
+16:06:52 PASS Simplified China configuration persists after worker and guard exit
+16:06:53 PASS restore  worker completed: 备份配置已重新应用并核对。游戏内文字需实际确认。
+16:06:53 Configured: zh-CN Default=0804 ACP=936 OEM=936 Mac=10008
+16:06:53 Fresh process: ACP=936 OEM=936 LCID=0804
+16:06:53 PASS all original configuration values restored
+16:06:53 PASS completed backup file remains byte-identical
+16:06:54 PASS set zh-TW worker completed: 所选区域已保存并保留。完整生效需要重启电脑。
+16:06:54 Configured: zh-TW Default=0404 ACP=950 OEM=950 Mac=10002
+16:06:54 Fresh process: ACP=950 OEM=950 LCID=0804
+16:06:55 PASS production guard restores intended backup after test owner termination
+16:06:55 FINAL BASELINE VERIFIED zh-CN Default=0804 ACP=936 OEM=936 Mac=10008

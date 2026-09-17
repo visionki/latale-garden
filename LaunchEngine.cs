@@ -59,7 +59,7 @@ namespace LaTaleGarden
                         Id = Path.GetFileName(files.DirectoryPath), Original = original, Pending = false,
                         CreatedUtc = DateTime.UtcNow, WorkerPid = Process.GetCurrentProcess().Id,
                         WorkerStartTicks = Process.GetCurrentProcess().StartTime.ToUniversalTime().Ticks,
-                        GameDirectory = request.GameDirectory
+                        GameDirectory = request.GameDirectory, Operation = "launch"
                     };
                     // The recovery record and watchdog must exist before the first system write.
                     files.SaveJournal(journal);
@@ -140,15 +140,20 @@ namespace LaTaleGarden
             if (journal == null) { files.Log("无法读取恢复记录，不能声称恢复成功。"); return false; }
             if (!journal.Pending) return true;
             if (journal.Original == null) { files.Log("恢复记录缺失原始值，拒绝猜测系统设置。"); return false; }
+            LocaleSnapshot target = RegionCatalog.RecoveryTarget(journal);
+            try { WindowsPlatform.ValidateSnapshot(target); }
+            catch (Exception ex) { files.Log("恢复目标无效：" + ex.Message); return false; }
             for (int attempt = 1; attempt <= 3; attempt++)
             {
                 try
                 {
-                    files.Log("恢复原设置，第 " + attempt + " 次；原区域=" + journal.Original.LocaleName);
+                    files.Log("恢复配置，第 " + attempt + " 次；目标=" + target.LocaleName);
                     // Even if registry values already match, reapply through the same official API.
-                    platform.Restore(journal.Original);
-                    if (!platform.Matches(journal.Original)) throw new IOException("恢复后的注册表值与原始备份不一致。");
+                    platform.Restore(target);
+                    if (!platform.Matches(target)) throw new IOException("恢复后的注册表值与目标备份不一致。");
                     journal.Pending = false;
+                    if (journal.Operation == "restore") journal.Committed = true;
+                    else if (journal.Operation == "set") journal.Committed = false;
                     files.SaveJournal(journal);
                     files.Log("已核对原区域与 ACP/OEMCP/MACCP，恢复完成。");
                     return true;
