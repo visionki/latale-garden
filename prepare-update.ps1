@@ -1,6 +1,6 @@
 param(
     [string]$Executable = (Join-Path $PSScriptRoot 'dist\LaTaleGarden.exe'),
-    [ValidateSet('preview','stable')][string]$Channel = 'preview',
+    [ValidateSet('preview','stable')][string]$Channel = 'stable',
     [Parameter(Mandatory = $true)][string]$NotesFile,
     [string]$OutputDirectory = (Join-Path $PSScriptRoot 'updates')
 )

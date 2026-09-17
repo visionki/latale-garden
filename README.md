@@ -2,7 +2,7 @@
 
 **彩虹岛台服的轻量启动器。** 遇到中文乱码时，可以用繁体兼容模式启动游戏，也可以随时检查、恢复系统区域设置。
 
-[下载启动器](https://github.com/visionki/latale-garden/releases/download/v1.1.3/LaTaleGarden.exe) · [查看版本更新](https://github.com/visionki/latale-garden/releases) · [反馈问题](https://github.com/visionki/latale-garden/issues)
+[下载启动器](https://github.com/visionki/latale-garden/releases/latest/download/LaTaleGarden.exe) · [查看版本更新](https://github.com/visionki/latale-garden/releases) · [反馈问题](https://github.com/visionki/latale-garden/issues)
 
 ## 快速开始
 
@@ -11,7 +11,7 @@
 3. **点击“启动游戏”**：先退出已经打开的游戏和官方启动器。保留默认开启的“繁体兼容模式”，出现 Windows 管理员授权提示时选择允许。
 4. **进入游戏**：在打开的官方启动器中完成更新、登录并开始游戏。LaTale Garden 会显示进度，并在启动流程完成后恢复原区域设置。
 
-请先安装好彩虹岛台服客户端。启动器面向 Windows 10 / 11 的 64 位电脑，目前为公开测试版；兼容范围见下方说明。
+请先安装好彩虹岛台服客户端。启动器面向 Windows 10 / 11 的 64 位电脑；兼容范围见下方说明。
 
 ![LaTale Garden 启动界面](docs/launcher-preview.png)
 
@@ -64,7 +64,7 @@
 ## 运行环境与验证范围
 
 - Windows 10 / Windows 11 **64 位**，.NET Framework **4.8 或更高版本**。如果启动时提示缺少该组件，请先安装后再打开；Win7 不在当前支持范围内。
-- Win11 25H2 已验证区域切换与恢复。**Win10 实机、进入游戏后的文字及完整登录游玩流程仍待验收**，当前版本作为公开测试版发布。
+- Win11 25H2 已验证区域切换与恢复。**Win10 实机、进入游戏后的文字及完整登录游玩流程仍待验收**。
 - Windows 系统区域修改完整生效需要重启。临时切换在具体游戏中的效果取决于 Windows 和客户端版本，配置检测成功不等于游戏内乱码已修复。
 - 启用 UTF-8 系统代码页（65001）时，暂不支持繁体兼容模式和手动简繁选择，仍可使用标准启动。
 

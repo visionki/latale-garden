@@ -2,13 +2,13 @@
 
 Release 标题只写版本号，例如 `v1.1.3`；正文列出本次功能变化与修复。下载、运行环境和使用步骤维护在 README，不在每次 Release 重复。历史 Release 的标题和正文可直接编辑，保留标签与已有文件链接。
 
-当前为公开测试阶段。保留 Release 的 Pre-release 状态，更新清单使用 `preview` 通道。客户端默认接收测试版，可以在设置中关闭。待完成 Win10 与游戏内验证后，再发布 `stable` 通道版本。
+公开版本按正式版发布：不勾选 Pre-release，更新清单使用 `stable` 通道，将最高版本设为 Latest。历史版本保留原标签与下载文件。系统与游戏内验证范围单独记录在 README 和 VALIDATION，不用预发布标记代替兼容性说明。
 
 ## 发布顺序
 
-1. 同步 `Program.Version`、`AssemblyInfo.cs` 与 `app.manifest` 的版本；更新 CHANGELOG，准备 `docs/releases/vX.Y.Z.md`。
+1. 同步 `Program.Version`、`AssemblyInfo.cs` 与 `app.manifest` 的版本，将新构建的 `Program.ReleaseChannel` 设为 `stable`；更新 CHANGELOG，准备 `docs/releases/vX.Y.Z.md`。
 2. 构建并运行检查。最后一次构建后，使用即将上传的同一个 EXE 生成更新清单。
-3. 创建对应标签与草稿 Release，标题为 `vX.Y.Z`，正文读取更新说明文件，上传 `LaTaleGarden.exe`。核对上传大小及 SHA-256，再发布 Release。
+3. 创建对应标签与草稿 Release，标题为 `vX.Y.Z`，正文读取更新说明文件，上传 `LaTaleGarden.exe`。核对上传大小及 SHA-256，再以正式版发布（`prerelease: false`），将最新版本设为 Latest（`make_latest: "true"`）。
 4. **Release 文件可以下载之后**，将签名后的清单提交到 `main` 的固定地址。可以先推发布分支和标签、上传并发布 Release，最后将该提交快进到 main。
 5. 从公开地址读取清单并验证签名，下载 EXE，核对大小、SHA-256 和内嵌版本。不要重建或替换已发布版本的二进制；修复应使用新版本号。
 
@@ -23,11 +23,13 @@ Release 标题只写版本号，例如 `v1.1.3`；正文列出本次功能变化
 # 以下检查使用本机发布密钥；先关闭真实启动器。会在测试目录打开并关闭测试启动器。
 .\test-update-install.ps1
 
-.\prepare-update.ps1 -NotesFile .\docs\releases\v1.1.3.md -Channel preview
+.\prepare-update.ps1 -NotesFile .\docs\releases\v1.1.3.md -Channel stable
 .\sign-document.ps1 -InputFile .\updates\announcements.source.json -OutputFile .\updates\announcements.json
 ```
 
 发布附件只需 EXE。GitHub 自动提供的源码归档是开发者使用的源码，不是运行包。
+
+已发布版本转为正式版时，只修改 Release 状态与更新清单中的通道，重新签名清单；保留原 EXE、版本号和摘要。v1.1.3 按此方式转为正式版，已安装客户端的更新偏好保持原值；关闭测试版更新也能接收 `stable` 通道的新版本。
 
 ## 签名与文件格式
 
