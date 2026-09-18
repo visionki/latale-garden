@@ -21,7 +21,7 @@ $release = [ordered]@{
     url = 'https://github.com/visionki/latale-garden/releases/download/v' + $version + '/LaTaleGarden.exe'
     sha256 = (Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant()
     size = (Get-Item -LiteralPath $Executable).Length
-    minimumWindowsBuild = 10240; minimumFrameworkRelease = 528040
+    minimumWindowsBuild = 22000; minimumFrameworkRelease = 528040
 }
 $manifest = [ordered]@{ schema = 1; releases = @($previous) + @($release) }
 [IO.File]::WriteAllText($inputFile, ($manifest | ConvertTo-Json -Depth 6), (New-Object Text.UTF8Encoding($false)))

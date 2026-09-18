@@ -51,7 +51,7 @@
             </Grid>
           </Border>
           <Border Grid.Row="2" BorderBrush="#E6D8C3" BorderThickness="1" CornerRadius="9" Padding="13,8" Margin="0,0,0,10">
-            <DockPanel LastChildFill="True"><CheckBox x:Name="CompatibilityToggle" Style="{StaticResource Toggle}" DockPanel.Dock="Right" VerticalAlignment="Center" AutomationProperties.Name="繁体兼容模式"/><StackPanel><TextBlock Text="繁体兼容模式" FontSize="14"/><TextBlock Text="临时调整区域，完成后恢复" Foreground="#998A76" FontSize="10.5" Margin="0,2,0,0"/></StackPanel></DockPanel>
+            <DockPanel LastChildFill="True"><CheckBox x:Name="CompatibilityToggle" Style="{StaticResource Toggle}" DockPanel.Dock="Right" VerticalAlignment="Center" AutomationProperties.Name="繁体兼容模式"/><StackPanel><TextBlock Text="繁体兼容模式" FontSize="14"/><TextBlock x:Name="CompatibilityHint" Text="仅 Win11 · 临时调整区域，完成后恢复" Foreground="#998A76" FontSize="10.5" Margin="0,2,0,0"/></StackPanel></DockPanel>
           </Border>
           <StackPanel Grid.Row="3" Margin="0,5,0,0">
             <StackPanel Orientation="Horizontal"><Path Data="M 1,5 L 1,17 L 19,17 L 19,5 L 9,5 L 7,2 L 1,2 Z" Stroke="#BE9454" StrokeThickness="1.5" Width="19" Height="18" Margin="2,0,10,0"/><TextBlock Text="游戏目录" FontSize="14"/></StackPanel>
@@ -94,7 +94,7 @@
               <CheckBox x:Name="PreviewUpdates" Content="接收公开测试版更新" FontSize="12" Margin="0,0,0,10"/>
               <CheckBox x:Name="ShowAnnouncements" Content="显示项目动态" FontSize="12"/>
             </StackPanel></Border>
-            <Border BorderBrush="#E2CFB1" BorderThickness="0,1,0,0" Padding="0,18,0,0"><StackPanel><TextBlock Text="关于兼容模式" FontSize="14"/><TextBlock Text="兼容模式会在启动前临时调整系统区域，完成后恢复原设置。实际效果取决于 Windows 与游戏版本；Win10 的乱码修复效果仍需实机确认。" TextWrapping="Wrap" FontSize="11.5" Foreground="#96826B" Margin="0,8,0,0"/><TextBlock x:Name="SystemInfoText" TextWrapping="Wrap" FontSize="10.5" Foreground="#A3927B" Margin="0,13,0,0"/></StackPanel></Border>
+            <Border BorderBrush="#E2CFB1" BorderThickness="0,1,0,0" Padding="0,18,0,0"><StackPanel><TextBlock Text="关于兼容模式" FontSize="14"/><TextBlock Text="仅支持 Windows 11 64 位。启动前临时调整系统区域，完成后恢复原设置；切换期间可能影响其他非 Unicode 程序。Windows 10 暂不提供乱码修复。" TextWrapping="Wrap" FontSize="11.5" Foreground="#96826B" Margin="0,8,0,0"/><TextBlock x:Name="SystemInfoText" TextWrapping="Wrap" FontSize="10.5" Foreground="#A3927B" Margin="0,13,0,0"/></StackPanel></Border>
           </StackPanel></ScrollViewer>
           <StackPanel Grid.Row="2"><Button x:Name="SaveSettingsButton" Content="保存设置" Style="{StaticResource Outline}" HorizontalAlignment="Left" Padding="20,10" Margin="0,13,0,0"/><TextBlock x:Name="SettingsNote" Text="设置与日志保存在当前用户的本地应用数据目录。" TextWrapping="Wrap" FontSize="10.5" Foreground="#A2927D" Margin="0,10,0,0"/></StackPanel>
         </Grid>

@@ -10,6 +10,8 @@ public class FakePlatform : ILaunchPlatform
     public int CaptureCount, ApplyCount, RestoreCount, LaunchCount, GuardCount;
     public bool InvalidPath, OldGame, GuardFailure, ApplyFailure, LaunchFailure, NeverClient, NeverWindow, BadVerification;
     public bool WindowDisappears;
+    public bool TemporaryLocaleSupported = true;
+    public bool SupportsTemporaryLocale { get { return TemporaryLocaleSupported; } }
     public int RestoreFailures;
     public double CancelAt = double.MaxValue, OwnerDiesAt = double.MaxValue;
     public LocaleSnapshot Original = new LocaleSnapshot { LocaleName = "ja-JP", DefaultLanguage = "0411", ACP = "932", OEMCP = "932", MACCP = "10001", RuntimeACP = 936 };
@@ -52,6 +54,21 @@ public static class EngineTests
         root = Path.GetFullPath(args.Length > 0 ? args[0] : "engine-test-results"); Directory.CreateDirectory(root);
         try
         {
+            Test("unsupported Windows rejects compatibility before backup, guard, system writes or launch", () => {
+                var p = new FakePlatform { TemporaryLocaleSupported = false }; var f = Run("unsupported-compatibility", p, true, 40, 5);
+                Check(Stage(f) == "failed" && p.CaptureCount == 0 && p.GuardCount == 0 && p.ApplyCount == 0 && p.RestoreCount == 0 && p.LaunchCount == 0 && f.ReadJournal() == null, "Unsupported system reached locale preparation");
+                Check(JsonFile.Read<SessionStatus>(f.FilePath("status.json")).Message.Contains("Windows 11"), "Missing supported-system explanation");
+            });
+            Test("unsupported Windows can use standard launch without locale changes", () => {
+                var p = new FakePlatform { TemporaryLocaleSupported = false }; var f = Run("unsupported-standard", p, false, 40, 5);
+                Check(Stage(f) == "running" && p.LaunchCount == 1 && p.ApplyCount == 0 && p.RestoreCount == 0 && p.CaptureCount == 0 && p.GuardCount == 0, "Standard launch blocked or changed locale");
+            });
+            Test("unsupported Windows still recovers a previous pending locale transaction", () => {
+                var p = new FakePlatform { RestoreFailures = 50 }; var f = Run("unsupported-recovery", p, true, 40, 5);
+                Check(Stage(f) == "recovery" && f.ReadJournal().Pending, "Missing pending transaction");
+                var recovery = new FakePlatform { TemporaryLocaleSupported = false };
+                Check(LaunchEngine.RestorePending(f, recovery, f.ReadJournal()) && recovery.RestoreCount == 1 && !f.ReadJournal().Pending, "OS restriction blocked emergency recovery");
+            });
             Test("success waits for new client window and initialization buffer, restores original Japanese locale", () => {
                 var p = new FakePlatform(); var f = Run("success", p, true, 40, 12);
                 Check(Stage(f) == "running", "Not running"); Check(p.RestoreAt >= 14, "Restored too early"); Check(p.Restored.LocaleName == "ja-JP", "Hardcoded original locale"); Check(!f.ReadJournal().Pending, "Journal still pending");

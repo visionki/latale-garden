@@ -4,6 +4,12 @@ Release 标题只写版本号，例如 `v1.1.3`；正文列出本次功能变化
 
 公开版本按正式版发布：不勾选 Pre-release，更新清单使用 `stable` 通道，将最高版本设为 Latest。历史版本保留原标签与下载文件。系统与游戏内验证范围单独记录在 README 和 VALIDATION，不用预发布标记代替兼容性说明。
 
+## 当前支持范围
+
+主线基于 v1.1.3 的全局临时区域切换流程，乱码修复仅支持 Windows 11 x64。进程注入实验分支已停止采用，不合入、不打包、不发布；其 Win10/Win11 游戏文字正常的短时结果不能作为持续兼容的证据。
+
+v1.1.4 当前为未发布的回退后构建。新更新清单最低系统 Build 为 22000，避免向 Win10 推送只支持 Win11 文字兼容的新版本。保留已发布 v1.1.3 的 EXE、标签、签名更新清单和历史下载地址，不能用本地构建覆盖旧附件。
+
 ## 发布顺序
 
 1. 同步 `Program.Version`、`AssemblyInfo.cs` 与 `app.manifest` 的版本，将新构建的 `Program.ReleaseChannel` 设为 `stable`；更新 CHANGELOG，准备 `docs/releases/vX.Y.Z.md`。

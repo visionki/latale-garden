@@ -28,6 +28,7 @@ namespace LaTaleGarden
         private SessionStatus latest;
         private DateTime lastStatusTime;
         private bool busy, starting, closeWhenFinished, closingAllowed, loading = true;
+        private bool compatibilityAvailable = Native.SupportsTemporaryLocale;
         private ClientInfo currentClient;
         private string stage = "ready";
         private string aboutReturnPane = "HomePane";
@@ -68,7 +69,7 @@ namespace LaTaleGarden
             UI<Grid>("Surface").Clip = new RectangleGeometry(new Rect(0, 0, 1078, 688), 16, 16);
             UI<Image>("HeroImage").Source = LoadImage("hero.png");
             Text("VersionText").Text = "非官方辅助启动器  ·  v" + Program.Version;
-            Text("AboutVersionText").Text = "版本 " + Program.Version + " · 公开测试版";
+            Text("AboutVersionText").Text = "版本 " + Program.Version + " · Windows 11";
             Button("AboutAuthorButton").Content = "@" + Program.Author + " ↗";
             Button("AboutAuthorButton").ToolTip = Program.AuthorUrl;
             Button("AboutProjectButton").ToolTip = Program.ProjectUrl;
@@ -76,6 +77,7 @@ namespace LaTaleGarden
             Button("LaunchButton").Tag = LoadImage("launch-button.png");
             UI<TextBox>("DirectoryText").Text = settings.GameDirectory;
             UI<CheckBox>("CompatibilityToggle").IsChecked = settings.Compatibility;
+            UpdateCompatibilityAvailability();
             Text("SystemInfoText").Text = Native.OSLabel() + "\n当前进程代码页：" + Native.GetACP() + " · 原生 x64 / .NET Framework 4.8";
             AddChoices("WaitCombo", new[] { 5, 15, 30, 60, 120 }, "分钟", settings.WaitMinutes);
             AddChoices("SettleCombo", new[] { 10, 20, 30, 60, 120 }, "秒", settings.SettleSeconds);
@@ -128,7 +130,7 @@ namespace LaTaleGarden
                 timer.Start();
                 await RefreshRegionAsync(true);
             };
-            if (string.IsNullOrEmpty(settings.GameDirectory)) ShowStatus("ready", "首次使用：请先选择彩虹岛台服安装目录。", false);
+            if (!compatibilityAvailable || string.IsNullOrEmpty(settings.GameDirectory)) ShowStatus("ready", "首次使用：请先选择彩虹岛台服安装目录。", false);
         }
         private static bool DirectoryIsValid(string path)
         {
@@ -158,6 +160,14 @@ namespace LaTaleGarden
             if (loading) return;
             settings.Compatibility = UI<CheckBox>("CompatibilityToggle").IsChecked == true;
             SavePreferences();
+        }
+        private void UpdateCompatibilityAvailability()
+        {
+            var toggle = UI<CheckBox>("CompatibilityToggle");
+            toggle.IsEnabled = compatibilityAvailable && !busy && stage != "recovery";
+            toggle.ToolTip = compatibilityAvailable ? "启动前临时切换系统区域，完成后恢复原设置。" : Native.TemporaryLocaleUnavailable;
+            Text("CompatibilityHint").Text = compatibilityAvailable ? "仅 Win11 · 临时调整区域，完成后恢复" : "当前系统暂不支持乱码修复";
+            if (!compatibilityAvailable) { settings.Compatibility = false; toggle.IsChecked = false; }
         }
         private void SaveSettings()
         {
@@ -322,6 +332,11 @@ namespace LaTaleGarden
                 case "region-done": title = "区域配置已核对"; break;
                 case "region-failed": title = "区域操作未完成"; break;
             }
+            if (!compatibilityAvailable && !busy && next != "running" && next != "recovery")
+            {
+                action = "普通启动";
+                if (next == "ready") { title = "文字兼容仅支持 Win11"; message = "当前系统仅可普通启动，不修复游戏乱码。区域检测与原设置恢复仍可使用。"; }
+            }
             Text("StatusTitle").Text = title; Text("StatusMessage").Text = message.Length > 90 ? message.Substring(0, 90) + "…详见启动记录。" : message;
             Text("StatusMessage").ToolTip = message;
             if (regionOperation || next.StartsWith("region-", StringComparison.Ordinal)) SetRegionResult(message);
@@ -332,7 +347,7 @@ namespace LaTaleGarden
             Button("LaunchButton").IsEnabled = !busy || next == "waiting" || next == "initializing";
             Button("ChooseDirectoryButton").IsEnabled = !busy && next != "recovery" && next != "running";
             Button("SettingsButton").IsEnabled = !busy && next != "recovery";
-            UI<CheckBox>("CompatibilityToggle").IsEnabled = !busy && next != "recovery";
+            UpdateCompatibilityAvailability();
             Button("CancelButton").Visibility = busy && next != "restoring" && next != "region-working" ? Visibility.Visible : Visibility.Collapsed;
             Button("CancelButton").IsEnabled = true;
             Text("CountdownText").Visibility = Visibility.Collapsed;

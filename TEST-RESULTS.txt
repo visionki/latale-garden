@@ -1,3 +1,6 @@
+PASS unsupported Windows rejects compatibility before backup, guard, system writes or launch
+PASS unsupported Windows can use standard launch without locale changes
+PASS unsupported Windows still recovers a previous pending locale transaction
 PASS success waits for new client window and initialization buffer, restores original Japanese locale
 PASS standard mode never captures or modifies locale and never starts a guard
 PASS cancel before preparation does not modify locale

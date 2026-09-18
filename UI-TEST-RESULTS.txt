@@ -1,3 +1,6 @@
+PASS unsupported Windows disables compatibility and clearly offers only standard launch
+PASS unsupported Windows preserves the emergency recovery action
+PASS Windows 11 enables the original temporary locale mode
 PASS idle verified settings allow both recovery and selection
 PASS all main region controls fit the collapsed management page
 PASS missing backup disables only backup restore

@@ -12,8 +12,8 @@ namespace LaTaleGarden
     public static class Program
     {
         public const string TransactionMutex = @"Global\LaTaleGarden.LocaleTransaction.v1";
-        public const string Version = "1.1.3";
-        public const string ReleaseChannel = "preview";
+        public const string Version = "1.1.4";
+        public const string ReleaseChannel = "stable";
         public static string StartupUpdateId;
         public const string Author = "visionki";
         public const string AuthorUrl = "https://github.com/visionki";

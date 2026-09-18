@@ -6,6 +6,7 @@ namespace LaTaleGarden
 {
     public interface ILaunchPlatform
     {
+        bool SupportsTemporaryLocale { get; }
         double ElapsedSeconds { get; }
         void Sleep(int milliseconds);
         void ValidateGame(string directory);
@@ -52,6 +53,7 @@ namespace LaTaleGarden
                 CheckCancellation();
                 if (request.Compatibility)
                 {
+                    if (!platform.SupportsTemporaryLocale) throw new PlatformNotSupportedException(Native.TemporaryLocaleUnavailable);
                     LocaleSnapshot original = platform.CaptureLocale();
                     files.Log("启动前：区域=" + original.LocaleName + "；Default=" + original.DefaultLanguage + "；ACP=" + original.ACP + "；OEMCP=" + original.OEMCP + "；MACCP=" + original.MACCP);
                     if (original.ACP == "65001") throw new InvalidOperationException("当前系统启用了 UTF-8 代码页，临时兼容模式暂不支持。可在设置中关闭兼容模式，使用标准启动。");

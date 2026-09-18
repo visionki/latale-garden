@@ -34,6 +34,12 @@ public static class RegionUiTests
             new Application();
             window = new LauncherWindow(Path.Combine(root, "unused-preview.png"));
             surface = (UserControl)typeof(LauncherWindow).GetField("surface", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(window);
+            Set("compatibilityAvailable", false); Call("ShowStatus", "ready", "", false);
+            Check(!UI<CheckBox>("CompatibilityToggle").IsEnabled && UI<CheckBox>("CompatibilityToggle").IsChecked == false && UI<TextBlock>("LaunchLabel").Text == "普通启动" && UI<TextBlock>("StatusMessage").Text.Contains("不修复"), "unsupported Windows disables compatibility and clearly offers only standard launch");
+            Call("ShowStatus", "recovery", "测试恢复", false);
+            Check(UI<Button>("LaunchButton").IsEnabled && UI<TextBlock>("LaunchLabel").Text == "恢复原设置", "unsupported Windows preserves the emergency recovery action");
+            Set("compatibilityAvailable", true); Call("ShowStatus", "ready", "", false);
+            Check(UI<CheckBox>("CompatibilityToggle").IsEnabled && UI<TextBlock>("CompatibilityHint").Text.Contains("仅 Win11"), "Windows 11 enables the original temporary locale mode");
             Call("ShowPane", "RegionPane");
             Render(Report());
             Check(UI<Button>("RegionRestoreButton").IsEnabled && UI<Button>("RegionApplyButton").IsEnabled, "idle verified settings allow both recovery and selection");

@@ -14,6 +14,24 @@ namespace LaTaleGarden
 {
     public static class Native
     {
+        public const string TemporaryLocaleUnavailable = "繁体兼容启动仅支持 Windows 11 64 位。Windows 10 暂不支持乱码修复，可关闭兼容模式后普通启动。";
+        public static bool SupportsTemporaryLocale
+        {
+            get
+            {
+                if (!Environment.Is64BitOperatingSystem) return false;
+                try
+                {
+                    using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion"))
+                    {
+                        int build;
+                        return key != null && int.TryParse(Convert.ToString(key.GetValue("CurrentBuildNumber", "0")), out build) && build >= 22000 &&
+                            string.Equals(Convert.ToString(key.GetValue("InstallationType", "")), "Client", StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+                catch { return false; }
+            }
+        }
         [DllImport("kernel32.dll")] public static extern uint GetACP();
         [DllImport("kernel32.dll")] public static extern uint GetOEMCP();
         [DllImport("kernel32.dll")] public static extern uint GetSystemDefaultLCID();
@@ -126,6 +144,7 @@ namespace LaTaleGarden
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private long launchTicks;
         public WindowsPlatform(SessionFiles files, LaunchRequest request) { this.files = files; this.request = request; }
+        public bool SupportsTemporaryLocale { get { return Native.SupportsTemporaryLocale; } }
         public double ElapsedSeconds { get { return clock.Elapsed.TotalSeconds; } }
         public void Sleep(int milliseconds) { Thread.Sleep(milliseconds); }
         public bool Cancelled { get { return File.Exists(files.FilePath("cancel.request")); } }
@@ -222,6 +241,7 @@ namespace LaTaleGarden
         }
         public void ApplyTraditional()
         {
+            if (!SupportsTemporaryLocale) throw new PlatformNotSupportedException(Native.TemporaryLocaleUnavailable);
             SetLocale("zh-TW");
             LocaleSnapshot current = CaptureLocale();
             if (current.LocaleName != "zh-TW" || current.ACP != "950") throw new IOException("繁体区域设置未写入预期值，已停止启动并尝试恢复。");

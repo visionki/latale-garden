@@ -7,6 +7,7 @@ using LaTaleGarden;
 
 public class FakeRegionPlatform : IRegionPlatform
 {
+    public bool SupportsTemporaryLocale { get { return true; } }
     public LocaleSnapshot Current = RegionCatalog.Preset("zh-CN");
     public int ApplyCount, RestoreCount, GuardCount, RestoreFailures;
     public bool Game, Cancel, Dead, ApplyFailure, WrongAppliedValue;
