@@ -1,0 +1,2 @@
+#!/bin/sh
+exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./check-public-files.ps1

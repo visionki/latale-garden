@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "updates-v1-1-3",
+      "title": "启动器支持内置更新了",
+      "text": "今后有新版本时，可以直接在这里下载并更新。遇到问题或有功能建议，欢迎到 GitHub 反馈。",
+      "url": "https://github.com/visionki/latale-garden/issues",
+      "startsUtc": "2026-09-18T00:00:00Z",
+      "expiresUtc": "2026-12-31T23:59:59Z"
+    }
+  ]
+}
